@@ -45,7 +45,10 @@ $ node -v
 
 ### Node Dependencies
 
-You can see a list of the software dependencies in the package.json file
+You can see the full list of the node dependencies in the [package.json](https://github.com/ATR-Lab/smartdesk-web-app/blob/develop/package.json) file
+
+- [rpio](https://www.npmjs.com/package/rpio)
+- [firebase](https://www.npmjs.com/package/firebase)
 
 ## Installation 
 
