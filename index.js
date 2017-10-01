@@ -1,14 +1,24 @@
 'user strict';
 var config      = require('./config.js');
 var firebase    = require('firebase');
-var rpio        = require('rpio');
+// var rpio        = require('rpio');
+var SerialPort = require('serialport');
 
 firebase.initializeApp(config.firebase.default);
 
 // GPIO 14 TX   // PIN 08 Transmit Serial Message
 // GPIO 15 RX   // PIN 10 Read Serial Message
 // GPIO 18 Read // PIN 12 Read Status by polling - There are not Interrupts in Raspberry PI
-rpio.open(8, rpio.OUTPUT, rpio.LOW);
+// rpio.open(8, rpio.OUTPUT, rpio.LOW);
+
+var port = new SerialPort('/dev/ttyS0', {
+    baudRate: 9600
+});
+
+// Set event handler for errors
+port.on('error', function(err) {
+  console.log('LOG Error: ', err.message);
+})
 
 // SmartDesk Protocols
 // Reference: https://nodejs.org/api/buffer.html
@@ -25,7 +35,13 @@ smartdeskStateRef.on('value', function(snapshot) {
     console.log(snapshot.val());
 
     for (var i = 0; i < 5; i++) {
-        rpio.writebuf(8, buttonUpBuffer);
-        rpio.msleep(250);
+        // rpio.writebuf(8, buttonUpBuffer);
+        // rpio.msleep(250);
+        port.write(buttonUpBuffer, function(err) {
+            if (err) {
+                return console.log('Error on write: ', err.message);
+            }
+            console.log('Message written');
+        });
     }
 });
