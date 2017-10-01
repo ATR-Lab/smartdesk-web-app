@@ -28,7 +28,7 @@ port.on('error', function(err) {
 });
 // Read data
 port.on('readable', function () {
-  console.log('Data:', port.read());
+  console.log('Data:', port.read(13));
 });
 
 // SmartDesk Protocols
