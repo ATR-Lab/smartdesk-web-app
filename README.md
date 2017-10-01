@@ -19,6 +19,15 @@ This repository hold a NodeJS web application that is hosted on a RaspberyPI. It
 # 1) Download the latest NodeJS Linux Binaries (ARM) for ARMv7. 
 #    Note that we are not using LTS
 #    https://nodejs.org/en/download/current/
+#    For instructions on how to update to the latest version check the following tutorial:
+#    http://www.hostingadvice.com/how-to/update-node-js-latest-version/
+
+# 1.1) Follow this step ONLY if you are updating NodeJS to the latest and if you encounter the folllowing error:
+#                   npm update check failed                  │
+# │           Try running with sudo or get access            │
+# │           to the local update config store via           │
+# │ sudo chown -R $USER:$(id -gn $USER) /home/kpatch/.config
+$ sudo chown -R $USER:$(id -gn $USER) /home/{username}/.config
 
 # 2) Un pack the TAR file. i.e. node-v8.6.0-linux-armv7l.tar.xz
 $ tar -xvf node-v8.6.0-linux-armv7l.tar.xz
