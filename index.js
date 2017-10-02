@@ -2,7 +2,7 @@
 var config      = require('./config.js');
 var firebase    = require('firebase');
 var rpio        = require('rpio');
-var SerialPort = require('serialport');
+var SerialPort  = require('serialport');
 
 firebase.initializeApp(config.firebase.default);
 
@@ -28,6 +28,7 @@ port.on('error', function(err) {
 });
 // Read data
 var feedbackMsg = port.read(13);
+
 port.on('readable', function () {
     if((feedbackMsg = port.read(13)) != null) {
         console.log('Data:', feedbackMsg);
@@ -49,7 +50,7 @@ var smartdeskStateRef = firebase.database().ref('smartdeskState');
 smartdeskStateRef.on('value', function(snapshot) {
     console.log(snapshot.val());
 
-    for (var i = 0; i < 5; i++) {
+    for (var i = 0; i < 500; i++) {
         // rpio.writebuf(8, buttonUpBuffer);
         // rpio.msleep(250);
         port.write(buttonUpBuffer, function(err) {
@@ -58,5 +59,15 @@ smartdeskStateRef.on('value', function(snapshot) {
             }
             console.log('Message written');
         });
+        var header = port.read(1)[0];
+        if(header == '0xbd') {
+            var feedbackHex = port.read(12).toString('hex');
+            console.log(feedbackHex);
+            //console.log(parseInt(feedbackHex, 16).toString(10));
+            // for(var j = 0; j < 12; i++) {
+            //     console.log(parseInt(port.read(1)[0], 16).toString(1));
+            // }
+            
+        }
     }
 });
