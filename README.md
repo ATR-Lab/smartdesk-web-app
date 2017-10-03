@@ -8,6 +8,7 @@ This repository hold a NodeJS web application that is hosted on a RaspberyPI. It
   - [NodeJS](#nodejs)
 - [Installation](#installation)
 - [How to use](#how-to-use)
+- [Development](#development)
 - [References](#references)
 
 ## Dependencies
@@ -16,7 +17,7 @@ This repository hold a NodeJS web application that is hosted on a RaspberyPI. It
 
 ```
 # On Raspberry PI
-# 1) Download the latest NodeJS Linux Binaries (ARM) for ARMv7. 
+# 1) Download the latest NodeJS Linux Binaries (ARM) for ARMv7.
 #    Note that we are not using LTS
 #    https://nodejs.org/en/download/current/
 #    For instructions on how to update to the latest version check the following tutorial:
@@ -38,7 +39,7 @@ $ cd node-v8.6.0-linux-armv7l
 # 4) Copy to /usr/local
 $ sudo cp -R * /usr/local/
 
-# 5) Test that Node was installed properly. 
+# 5) Test that Node was installed properly.
 #    The version of your installation should display.
 $ node -v
 ```
@@ -50,7 +51,7 @@ You can see the full list of the NodeJS dependencies in the [package.json](https
 - [rpio](https://www.npmjs.com/package/rpio)
 - [firebase](https://www.npmjs.com/package/firebase)
 
-## Installation 
+## Installation
 
 ```
 # In the project directory, type the following command:
@@ -62,6 +63,50 @@ $ npm install
 # DRAFT - Hack
 # In the project directory, type the following command:
 $ node index.js
+```
+
+## Development
+
+### State Schemas
+
+#### Desk
+```
+# Desk Update Heartbeat
+{
+    "desk": {
+        "action": {
+            "parameter": {
+                "type": "NUMERIC",
+                "value": 78.0
+            },
+            "status": "EXECUTING",
+            "type": "STATE_UPDATE"
+        },
+        "currentHeight": 78.0,
+        "previousHeight": 70.0,
+        "state": "ON"
+    }
+}
+```
+
+```
+# Desk Increase Height
+{
+    "desk": {
+        "action": {
+            "parameter": {
+                "type": "NUMERIC",
+                "value": 78.0
+            },
+            "status": "EXECUTING",
+            "type": "RAISE"
+        },
+        "currentHeight": 78.0,
+        "previousHeight": 70.0,
+        "state": "ON"
+    }
+}
+
 ```
 
 ## References
