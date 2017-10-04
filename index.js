@@ -55,13 +55,9 @@ port.on('error', function(err) {
 var deskHeight = [];
 deskHeight[0] = 0;
 deskHeight[1] = 0;
-var oldState = 0;
 
-var deskStatus = true;
 var hexBuf = new Buffer(13);
 var pointer = 0;
-var currentPointer = 0;
-var startMsg = false;
 var heartbit = 1;
 
 var desk = {
@@ -110,9 +106,9 @@ port.on('data', function(data) {
                 pointer ++;
             } else {
                 if (pointer == 13) {
-                    console.log(`< ${hexBuf[0]}, ${hexBuf[1]}, ${hexBuf[2]}, ${hexBuf[3]}\
-                        , ${hexBuf[4]}, ${hexBuf[5]}, ${hexBuf[6]}, ${hexBuf[7]}\
-                        , ${hexBuf[8]}, ${hexBuf[9]}, ${hexBuf[10]}, ${hexBuf[11]}, ${hexBuf[12]} >`);
+                    console.log(`< ${hexBuf[0]}, ${hexBuf[1]}, ${hexBuf[2]}, ${hexBuf[3]}` +
+                        `, ${hexBuf[4]}, ${hexBuf[5]}, ${hexBuf[6]}, ${hexBuf[7]}` +
+                        `, ${hexBuf[8]}, ${hexBuf[9]}, ${hexBuf[10]}, ${hexBuf[11]}, ${hexBuf[12]} >`);
 
                     deskHeight[0] = hexBuf[11];
                     deskHeight[1] = hexBuf[12]
@@ -127,13 +123,13 @@ port.on('data', function(data) {
                     if(desk.state == 'ON') {
                         if ( (desk.action.command == deskaction.command.RAISE && (desk.action.value - desk.currentHeight) <= 0 )
                             || (desk.action.command == deskaction.command.LOWER && (desk.action.value - desk.currentHeight) >= 0 )) {
-                            desk.action.status = deskaction.status.COMPLETED;
                             desk.state = 'OFF';
                             deskRef.update({state: 'OFF'});
+
+                            desk.action.status = deskaction.status.COMPLETED;
                             deskRef.child('action').update({status: deskaction.status.COMPLETED});
+
                             port.flush(null);
-                            clearInterval(raiseFun);
-                            clearInterval(lowerFun);
                             console.log('ACTION COMPLETED');
                         }
                     }
