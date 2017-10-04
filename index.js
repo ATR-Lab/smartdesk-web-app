@@ -10,20 +10,14 @@ const SerialPort  = require('serialport');
  * --action :   'up', 'down' // Only used when --env = dev
  * --val    :   {numeric value, discrete value}
  */
-// var grab = function(flag) {
-//     var index = process.argv.indexOf(flag);
-//     return (index === -1) ? null : process.argv[index+1];
-// }
-const grab = (flag) => {
+const grab = flag => {
     var index = process.argv.indexOf(flag);
     return (index === -1) ? null : process.argv[index+1];
 }
 const env = grab('--env');    // Environment: 'dev' 'prod'
 
-// var hexToDec = function(val) {
-//     return parseInt(val, 16);//.toString(10);
-// }
-const hexToDec = val => { return parseInt(val, 16); }
+/* Convert hex value to decimal */
+const hexToDec = hexVal => { return parseInt(hexVal, 16); }
 
 /* GPIO Configuration */
 // GPIO 14 TX   // PIN 08 Transmit Serial Message
