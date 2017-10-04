@@ -1,6 +1,6 @@
 'user strict';
 const config      = require('./config.js');
-const deskAction  = require('./desk/action');
+const deskaction  = require('./desk/action');
 const desktrigger = require('./desk/trigger');
 const firebase    = require('firebase');
 const SerialPort  = require('serialport');
@@ -44,9 +44,10 @@ port.open(function(err) {
         return console.log('Error opening port: ', err.message);
     } else {
         console.log('Serial port opened');
+        port.flush(null);
     }
 });
-port.on('open', function() { console.log('JUST OPENED PORT'); });
+port.on('open', function() { console.log('JUST OPENED PORT');  });
 port.on('error', function(err) {
     console.log('LOG Error: ', err.message);
 });
@@ -63,7 +64,7 @@ var currentPointer = 0;
 var startMsg = false;
 var heartbit = 1;
 
-var deskState = {
+var desk = {
     action: {
         type: 'NAN',
         value: -1,
@@ -71,14 +72,33 @@ var deskState = {
         command: 'NAN'
     },
     currentHeight: -1,
-    state: 'NAN'
+    state: 'OFF'
 };
 
+const raiseDesk = () => {
+    port.write(desktrigger.up, function(err, results) {
+        if (err) {
+            return console.log('Error on write: ', err.message);
+        }
+        console.log('RAISING DESK');
+    });
+};
+
+const lowerDesk = () =>{
+    port.write(desktrigger.down, function(err, results) {
+        if (err) {
+            return console.log('Error on write: ', err.message);
+        }
+        console.log('DECREASING DESK');
+    });
+};
+
+var raiseFun;
+var lowerFun;
 const wait = 2000; //half a  second
 var prevTime = new Date(new Date().getTime() + wait);
 var currTime = new Date();
 port.on('data', function(data) {
-    if(prevTime > currTime) {
         for(var i = 0; i < data.length; i++) {
             if ( pointer == 0) {
                 if ( data[i] == 0xbd) {
@@ -100,49 +120,85 @@ port.on('data', function(data) {
 
                     heartbit = heartbit^1;
                     deskRef.update({heartbit: heartbit, currentHeight: deskHeight[0]});
-                    deskState.currentHeight = deskHeight[0];
+                    desk.currentHeight = deskHeight[0];
 
                     prevTime = new Date(new Date().getTime() + wait);
+
+                    if(desk.state == 'ON') {
+                        if ( (desk.action.command == deskaction.command.RAISE && (desk.action.value - desk.currentHeight) <= 0 )
+                            || (desk.action.command == deskaction.command.LOWER && (desk.action.value - desk.currentHeight) >= 0 )) {
+                            desk.action.status = deskaction.status.COMPLETED;
+                            desk.state = 'OFF';
+                            deskRef.update({state: 'OFF'});
+                            deskRef.child('action').update({status: deskaction.status.COMPLETED});
+                            port.flush(null);
+                            clearInterval(raiseFun);
+                            clearInterval(lowerFun);
+                            console.log('ACTION COMPLETED');
+                        }
+                    }
                 }
             }
         }
-    }
+    //console.log(`${desk.action.status}, ${desk.action.command}, ${desk.action.value}, ${desk.currentHeight}`)
+    //console.log(`11111ACTION STATUS: ${desk.action.status}`);
+    if(desk.action.status === deskaction.status.EXECUTING) {
+        if(desk.state == 'OFF') {
+            desk.state = 'ON';
+            deskRef.update({state: 'ON'});
+        }
 
-    if(deskState.action.status === deskAction.status.EXECUTING && deskState.currentHeight != deskState.action.value) {
-        switch(deskState.action.type) {
-            case deskAction.type.NUMERIC:
+        console.log(`22222ACTION STATUS: ${desk.action.status}`);
+        console.log(`COMMAND: ${desk.action.command} VALUE: ${desk.action.value} CURRHEIGHT: ${desk.currentHeight}`)
+        switch(desk.action.type) {
+            case deskaction.type.NUMERIC:
                 //console.log('EXECUTING NUMERIC');
-                switch(deskState.action.command) {
-                    case deskAction.command.RAISE:
-                        //console.log('EXECUTING RAISE');
-                        port.write(desktrigger.up, function(err, results) {
-                            if (err) {
-                                return console.log('Error on write: ', err.message);
-                            }
-                        //    console.log('RAISING DESK');
-                        });
+                switch(desk.action.command) {
+                    case deskaction.command.RAISE:
+                        console.log('RAISE');
+                        raiseDesk();
+                        raiseDesk();
+                        raiseDesk();
+                        /*
+                        raiseFun = setInterval(function() {
+                            port.write(desktrigger.up, function(err, results) {
+                                if (err) {
+                                    return console.log('Error on write: ', err.message);
+                                }
+                                console.log('RAISING DESK');
+                            });
+                        }, 1000);
+                        */
                         break;
-                    case deskAction.command.LOWER:
-                        port.write(desktrigger.down, function(err, results) {
-                            if (err) {
-                                return console.log('Error on write: ', err.message);
-                            }
-                            //console.log('DECREASING DESK');
-                        });
+                    case deskaction.command.LOWER:
+                        console.log('LOWER');
+                        /*
+                        lowerFun = setInterval(function() {
+                            port.write(desktrigger.down, function(err, results) {
+                                if (err) {
+                                    return console.log('Error on write: ', err.message);
+                                }
+                                console.log('DECREASING DESK');
+                            });
+                        }, 1000);
+                        */
+                        lowerDesk();
+                        lowerDesk();
+                        //lowerDesk();
                         break;
                     default:
                         console.log('EXECUTING DEFAULT INNER');
                         break;
                 }
                 break;
-            case deskAction.type.QUALITATIVE:
+            case deskaction.type.QUALITATIVE:
                 break;
             default:
                 console.log('EXECUTING DEFAULT');
                 //break;
         }
     } else {  // We are done, no need to raise or lower the desk
-        deskState.action.status = deskAction.status.COMPLETED;
+        //desk.action.status = deskaction.status.COMPLETED;
     }
 
     currTime = new Date();
@@ -158,49 +214,14 @@ const officeRef         = database.ref('office');
 /* Listen for changes that take place when USER TALKS TO VOICE INTERFACE */
 deskRef.child('action').on('value', function(snapshot) {
     if(snapshot.val()['status'] === 'EXECUTE') { // We receive a command from voice interface
-        deskState.action.command = snapshot.val()['command'];  // LOWER, RAISE
-        deskState.action.type    = snapshot.val()['type'];     // QUANTITATIVE, QUALITATVE
-        deskState.action.value   = snapshot.val()['value'];    // A quantitative or qualitative value
-        deskState.action.status  = deskAction.status.EXECUTING;
-        console.log(`desk->action->status: ${deskState.action.status} ${deskState.action.command} of type: ${deskState.action.type} ${deskState.action.value}`);
+        desk.action.command = snapshot.val()['command'];  // LOWER, RAISE
+        desk.action.type    = snapshot.val()['type'];     // QUANTITATIVE, QUALITATVE
+        desk.action.value   = snapshot.val()['value'];    // A quantitative or qualitative value
+        desk.action.status  = deskaction.status.EXECUTING;
+        console.log(`desk->action->status: ${desk.action.status} ${desk.action.command} of type: ${desk.action.type} ${desk.action.value}`);
     } else if(snapshot.val()['status'] === 'DONE'){
         // console.log('desk->action->status: DONE')
     } else { // else 'DONE'
         //
     }
 });
-
-deskRef.child('action').child('status').on('value', function(snapshot) {
-    console.log('desk->action->status::: ', snapshot.val());
-});
-
-deskRef.child('action').child('type').on('value', function(snapshot) {
-    console.log('desk->action->type: ', snapshot.val());
-});
-
-// smartdeskStateRef.on('value', function(snapshot) {
-//     console.log(snapshot.val());
-//     targetStateTop      = 85;
-//     targetStateBottom   = 75;
-
-//     var targetHeight = (grab('action')!=null && grab('val') != null) ? grab('val') : -1;
-//     for(var i = 0; i < 15; i++) {
-//         if(deskState[0] < targetHeight) {
-//             port.write(desktrigger.up, function(err, results) {
-//                 if (err) {
-//                     return console.log('Error on write: ', err.message);
-//                 }
-//                 deskStatus = 'EXECUTING';
-//                 console.log('RAISING DESK');
-//             });
-//         } else {
-//             port.write(desktrigger.down, function(err, results) {
-//                 if (err) {
-//                     return console.log('Error on write: ', err.message);
-//                 }
-//                 deskStatus = 'EXECUTING';
-//                 console.log('DECREASING DESK');
-//             });
-//         }
-//     }
-// });
