@@ -48,8 +48,9 @@ $ node -v
 
 You can see the full list of the NodeJS dependencies in the [package.json](https://github.com/ATR-Lab/smartdesk-web-app/blob/develop/package.json) file
 
-- [rpio](https://www.npmjs.com/package/rpio)
+- [serialport](https://www.npmjs.com/package/serialport)
 - [firebase](https://www.npmjs.com/package/firebase)
+- [rpio](https://www.npmjs.com/package/rpio)
 
 ## Installation
 
