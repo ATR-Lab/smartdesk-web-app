@@ -114,7 +114,7 @@ port.on('data', function(data) {
                     deskHeight[1] = hexBuf[12]
                     pointer = 0;
 
-                    heartbit = heartbit^1;
+                    heartbit = heartbit^1;    // flip bit
                     deskRef.update({heartbit: heartbit, currentHeight: deskHeight[0]});
                     desk.currentHeight = deskHeight[0];
 
@@ -189,13 +189,13 @@ const officeRef         = database.ref('office');
 
 /* Listen for changes that take place when USER TALKS TO VOICE INTERFACE */
 deskRef.child('action').on('value', function(snapshot) {
-    if(snapshot.val()['status'] === 'EXECUTE') { // We receive a command from voice interface
+    if(snapshot.val()['status'] === deskaction.status.EXECUTE) { // We receive a command from voice interface
         desk.action.command = snapshot.val()['command'];  // LOWER, RAISE
         desk.action.type    = snapshot.val()['type'];     // QUANTITATIVE, QUALITATVE
         desk.action.value   = snapshot.val()['value'];    // A quantitative or qualitative value
         desk.action.status  = deskaction.status.EXECUTING;
         console.log(`desk->action->status: ${desk.action.status} ${desk.action.command} of type: ${desk.action.type} ${desk.action.value}`);
-    } else if(snapshot.val()['status'] === 'DONE'){
+    } else if(snapshot.val()['status'] === deskaction.status.COMPLETED){
         // console.log('desk->action->status: DONE')
     } else { // else 'DONE'
         //
