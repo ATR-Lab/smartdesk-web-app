@@ -75,12 +75,10 @@ $ node index.js
 {
     "desk": {
         "action": {
-            "parameter": {
-                "type": "NUMERIC",
-                "value": 78.0
-            },
+            "command": "RAISE",
             "status": "EXECUTING",
-            "type": "STATE_UPDATE"
+            "type": "QUANTITATIVE",
+            "value": 78.0
         },
         "currentHeight": 78.0,
         "previousHeight": 70.0,
@@ -94,12 +92,12 @@ $ node index.js
 {
     "desk": {
         "action": {
-            "parameter": {
-                "type": "NUMERIC",
-                "value": 78.0
-            },
+            "command": "RAISE",
             "status": "EXECUTING",
-            "type": "RAISE"
+            "type": "QUANTITATIVE",
+            "value": 78.0,
+
+
         },
         "currentHeight": 78.0,
         "previousHeight": 70.0,

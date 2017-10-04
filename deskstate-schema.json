@@ -1,10 +1,10 @@
 {
     "desk": {
         "action": {
-            "type": "NUMERIC",
-            "value": -1.0,
+            "command": "RAISE",
             "status": "EXECUTING",
-            "command": "RAISE"
+            "type": "QUANTITATIVE",
+            "value": -1.0
         },
         "currentHeight": -1.0,
         "previousHeight": -1.0,
