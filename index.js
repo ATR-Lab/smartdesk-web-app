@@ -6,7 +6,7 @@ const firebase    = require('firebase');
 const SerialPort  = require('serialport');
 // const rpio        = require('rpio');
 
-/* Get terminal arguments 
+/* Get terminal arguments
  * --env    :   'dev', 'prod'
  * --action :   'up', 'down' // Only used when --env = dev
  * --val    :   {numeric value, discrete value}
@@ -20,8 +20,8 @@ const hexToDec = hexVal => { return parseInt(hexVal, 16); }
 
 const env = grab('--env');    // Environment: 'dev' 'prod'
 
-/* 
- * GPIO Configuration 
+/*
+ * GPIO Configuration
  * GPIO 14 TX   // PIN 08 Transmit Serial Message
  * GPIO 14 TX   // PIN 08 Transmit Serial Message
  * GPIO 15 RX   // PIN 10 Read Serial Message
@@ -74,43 +74,52 @@ var deskState = {
     state: 'NAN'
 };
 
+const wait = 2000; //half a  second
+var prevTime = new Date(new Date().getTime() + wait);
+var currTime = new Date();
 port.on('data', function(data) {
-    for(var i = 0; i < data.length; i++) {
-        if ( pointer == 0) {
-            if ( data[i] == 0xbd) {
+    if(prevTime > currTime) {
+        for(var i = 0; i < data.length; i++) {
+            if ( pointer == 0) {
+                if ( data[i] == 0xbd) {
+                    hexBuf[pointer] = data[i];
+                    pointer = 1;
+                }
+            } else if ((pointer > 0) && (pointer < 13)) {
                 hexBuf[pointer] = data[i];
-                pointer = 1;
-            }
-        } else if ((pointer > 0) && (pointer < 13)) {
-            hexBuf[pointer] = data[i];
-            pointer ++;
-        } else {
-            if (pointer == 13) {
-                console.log(`< ${hexBuf[0]}, ${hexBuf[1]}, ${hexBuf[2]}, ${hexBuf[3]}\
-                    , ${hexBuf[4]}, ${hexBuf[5]}, ${hexBuf[6]}, ${hexBuf[7]}\
-                    , ${hexBuf[8]}, ${hexBuf[9]}, ${hexBuf[10]}, ${hexBuf[11]}, ${hexBuf[12]} >`);
+                pointer ++;
+            } else {
+                if (pointer == 13) {
+                    console.log(`< ${hexBuf[0]}, ${hexBuf[1]}, ${hexBuf[2]}, ${hexBuf[3]}\
+                        , ${hexBuf[4]}, ${hexBuf[5]}, ${hexBuf[6]}, ${hexBuf[7]}\
+                        , ${hexBuf[8]}, ${hexBuf[9]}, ${hexBuf[10]}, ${hexBuf[11]}, ${hexBuf[12]} >`);
 
-                deskHeight[0] = hexBuf[11];
-                deskHeight[1] = hexBuf[12]
-                pointer = 0;
+                    deskHeight[0] = hexBuf[11];
+                    deskHeight[1] = hexBuf[12]
+                    pointer = 0;
 
-                heartbit = heartbit^1;
-                desk.child('heartbit').update({heartbit: heartbit, currentHeight: deskHeight[0]});
-                deskState.currentHeight = deskHeight[0];
+                    heartbit = heartbit^1;
+                    deskRef.update({heartbit: heartbit, currentHeight: deskHeight[0]});
+                    deskState.currentHeight = deskHeight[0];
+
+                    prevTime = new Date(new Date().getTime() + wait);
+                }
             }
         }
     }
 
-    if(deskState.currentHeight != deskState.action.value && deskState.action.status === deskAction.status.EXECUTING) {
+    if(deskState.action.status === deskAction.status.EXECUTING && deskState.currentHeight != deskState.action.value) {
         switch(deskState.action.type) {
             case deskAction.type.NUMERIC:
+                //console.log('EXECUTING NUMERIC');
                 switch(deskState.action.command) {
                     case deskAction.command.RAISE:
+                        //console.log('EXECUTING RAISE');
                         port.write(desktrigger.up, function(err, results) {
                             if (err) {
                                 return console.log('Error on write: ', err.message);
                             }
-                            console.log('RAISING DESK');
+                        //    console.log('RAISING DESK');
                         });
                         break;
                     case deskAction.command.LOWER:
@@ -118,21 +127,25 @@ port.on('data', function(data) {
                             if (err) {
                                 return console.log('Error on write: ', err.message);
                             }
-                            console.log('DECREASING DESK');
-                        });  
+                            //console.log('DECREASING DESK');
+                        });
                         break;
                     default:
+                        console.log('EXECUTING DEFAULT INNER');
                         break;
                 }
                 break;
             case deskAction.type.QUALITATIVE:
                 break;
             default:
+                console.log('EXECUTING DEFAULT');
                 //break;
         }
     } else {  // We are done, no need to raise or lower the desk
         deskState.action.status = deskAction.status.COMPLETED;
     }
+
+    currTime = new Date();
 });
 
 /* Firebase Configuration */
@@ -148,8 +161,8 @@ deskRef.child('action').on('value', function(snapshot) {
         deskState.action.command = snapshot.val()['command'];  // LOWER, RAISE
         deskState.action.type    = snapshot.val()['type'];     // QUANTITATIVE, QUALITATVE
         deskState.action.value   = snapshot.val()['value'];    // A quantitative or qualitative value
-        deskState.action.status  = deskAction.status.EXECUTING; 
-        console.log('desk->action->status: EXECUTE', deskState.action.value);
+        deskState.action.status  = deskAction.status.EXECUTING;
+        console.log(`desk->action->status: ${deskState.action.status} ${deskState.action.command} of type: ${deskState.action.type} ${deskState.action.value}`);
     } else if(snapshot.val()['status'] === 'DONE'){
         // console.log('desk->action->status: DONE')
     } else { // else 'DONE'
@@ -187,7 +200,7 @@ deskRef.child('action').child('type').on('value', function(snapshot) {
 //                 }
 //                 deskStatus = 'EXECUTING';
 //                 console.log('DECREASING DESK');
-//             });            
+//             });
 //         }
 //     }
 // });
