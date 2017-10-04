@@ -1,7 +1,7 @@
 'user strict';
 const config      = require('./config.js');
-const desktrigger = require('./desktrigger');
-const deskAction  = require('./deskaction');
+const deskAction  = require('./desk/action');
+const desktrigger = require('./desk/trigger');
 const firebase    = require('firebase');
 const SerialPort  = require('serialport');
 // const rpio        = require('rpio');
@@ -62,7 +62,6 @@ var pointer = 0;
 var currentPointer = 0;
 var startMsg = false;
 var heartbit = 1;
-
 
 var deskState = {
     action: {
