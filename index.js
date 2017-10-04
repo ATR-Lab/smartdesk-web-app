@@ -52,13 +52,21 @@ port.on('error', function(err) {
     console.log('LOG Error: ', err.message);
 });
 
-var deskHeight = [];
-deskHeight[0] = 0;
-deskHeight[1] = 0;
+port.on('close', function(err) {
+    if(err) {
+        console.log('LOG Error Closed Port: ', err.message);
+    }
+    console.log('Port Closed....');
+});
 
-var hexBuf = new Buffer(13);
-var pointer = 0;
-var heartbit = 1;
+var deskHeight    = [];
+deskHeight[0]     = 0;
+deskHeight[1]     = 0;
+previousHeight    = -1;
+
+var hexBuf     = new Buffer(13);
+var pointer    = 0;
+var heartbit   = 1;
 
 var desk = {
     action: {
@@ -80,7 +88,7 @@ const raiseDesk = () => {
     });
 };
 
-const lowerDesk = () =>{
+const lowerDesk = () => {
     port.write(desktrigger.down, function(err, results) {
         if (err) {
             return console.log('Error on write: ', err.message);
@@ -89,53 +97,80 @@ const lowerDesk = () =>{
     });
 };
 
+const idleDesk = () => {
+    port.write(desktrigger.idle, function(err, results) {
+        if (err) {
+            return console.log('Error on write: ', err.message);
+        }
+        console.log('IDLE HEARTBEAT');
+    });
+}
+
 var raiseFun;
 var lowerFun;
-const wait = 2000; //half a  second
-var prevTime = new Date(new Date().getTime() + wait);
+const wait = 10000; //10 secs
+var waitUntil = new Date(new Date().getTime() + wait);
 var currTime = new Date();
 port.on('data', function(data) {
-        for(var i = 0; i < data.length; i++) {
-            if ( pointer == 0) {
-                if ( data[i] == 0xbd) {
-                    hexBuf[pointer] = data[i];
-                    pointer = 1;
-                }
-            } else if ((pointer > 0) && (pointer < 13)) {
+    for(var i = 0; i < data.length; i++) {
+        if ( pointer == 0) {
+            if ( data[i] == 0xbd) {
                 hexBuf[pointer] = data[i];
-                pointer ++;
-            } else {
-                if (pointer == 13) {
-                    console.log(`< ${hexBuf[0]}, ${hexBuf[1]}, ${hexBuf[2]}, ${hexBuf[3]}` +
-                        `, ${hexBuf[4]}, ${hexBuf[5]}, ${hexBuf[6]}, ${hexBuf[7]}` +
-                        `, ${hexBuf[8]}, ${hexBuf[9]}, ${hexBuf[10]}, ${hexBuf[11]}, ${hexBuf[12]} >`);
+                pointer = 1;
+            }
+        } else if ((pointer > 0) && (pointer < 13)) {
+            hexBuf[pointer] = data[i];
+            pointer ++;
+        } else {
+            if (pointer == 13) {
+                console.log(`< ${hexBuf[0]}, ${hexBuf[1]}, ${hexBuf[2]}, ${hexBuf[3]}` +
+                    `, ${hexBuf[4]}, ${hexBuf[5]}, ${hexBuf[6]}, ${hexBuf[7]}` +
+                    `, ${hexBuf[8]}, ${hexBuf[9]}, ${hexBuf[10]}, ${hexBuf[11]}, ${hexBuf[12]} >`);
 
-                    deskHeight[0] = hexBuf[11];
-                    deskHeight[1] = hexBuf[12]
-                    pointer = 0;
+                deskHeight[0] = hexBuf[11];
+                deskHeight[1] = hexBuf[12]
+                pointer = 0;
 
-                    heartbit = heartbit^1;    // flip bit
-                    deskRef.update({heartbit: heartbit, currentHeight: deskHeight[0]});
+                //heartbit = heartbit^1;    // flip bit
+                //deskRef.update({heartbit: heartbit, currentHeight: deskHeight[0]});
+                //desk.currentHeight = deskHeight[0];
+                if(deskHeight[0] != 0 && deskHeight[0] != previousHeight) {
                     desk.currentHeight = deskHeight[0];
+                    deskRef.update({currentHeight: deskHeight[0]});
+                    previousHeight = deskHeight[0]
+                }
 
-                    prevTime = new Date(new Date().getTime() + wait);
+                prevTime = new Date(new Date().getTime() + wait);
 
-                    if(desk.state == 'ON') {
-                        if ( (desk.action.command == deskaction.command.RAISE && (desk.action.value - desk.currentHeight) <= 0 )
-                            || (desk.action.command == deskaction.command.LOWER && (desk.action.value - desk.currentHeight) >= 0 )) {
-                            desk.state = 'OFF';
-                            deskRef.update({state: 'OFF'});
+                if(desk.state == 'ON') {
+                    if ( (desk.action.command == deskaction.command.RAISE && (desk.action.value - desk.currentHeight) <= 0 )
+                        || (desk.action.command == deskaction.command.LOWER && (desk.action.value - desk.currentHeight) >= 0 )) {
+                        desk.state = 'OFF';
+                        deskRef.update({state: 'OFF'});
 
-                            desk.action.status = deskaction.status.COMPLETED;
-                            deskRef.child('action').update({status: deskaction.status.COMPLETED});
+                        desk.action.status = deskaction.status.COMPLETED;
+                        deskRef.child('action').update({status: deskaction.status.COMPLETED});
 
-                            port.flush(null);
-                            console.log('ACTION COMPLETED');
-                        }
+                        port.flush(null);
+                        console.log('ACTION COMPLETED');
                     }
                 }
             }
         }
+    }
+
+    currTime = new Date();
+    if(currTime > waitUntil) {
+        idleDesk();
+        port.flush(function(err) {
+            if(err) {
+                console.log('LOG Error Flush: ', err.message)
+            }
+        });
+        deskRef.update({heartbit: currTime});
+        waitUntil = new Date(new Date().getTime() + wait);
+    }
+
     //console.log(`${desk.action.status}, ${desk.action.command}, ${desk.action.value}, ${desk.currentHeight}`)
     //console.log(`11111ACTION STATUS: ${desk.action.status}`);
     if(desk.action.status === deskaction.status.EXECUTING) {
@@ -195,7 +230,7 @@ deskRef.child('action').on('value', function(snapshot) {
         desk.action.value   = snapshot.val()['value'];    // A quantitative or qualitative value
         desk.action.status  = deskaction.status.EXECUTING;
         console.log(`desk->action->status: ${desk.action.status} ${desk.action.command} of type: ${desk.action.type} ${desk.action.value}`);
-    } else if(snapshot.val()['status'] === deskaction.status.COMPLETED){
+    } else if(snapshot.val()['status'] === deskaction.status.COMPLETED) {
         // console.log('desk->action->status: DONE')
     } else { // else 'DONE'
         //
