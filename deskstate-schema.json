@@ -1,12 +1,10 @@
 {
     "desk": {
         "action": {
-            "parameter": {
-                "type": "NUMERIC",
-                "value": -1.0
-            },
+            "type": "NUMERIC",
+            "value": -1.0,
             "status": "EXECUTING",
-            "type": "RAISE"
+            "command": "RAISE"
         },
         "currentHeight": -1.0,
         "previousHeight": -1.0,
