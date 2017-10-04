@@ -6,11 +6,11 @@ deskAction.status.EXECUTING  = 'EXECUTING';
 deskAction.status.COMPLETED  = 'COMPLETED';
 
 deskAction.command = {};
-deskAction.command.LOWER        = 'LOWER';
-deskAction.command.RAISE        = 'RAISE';
+deskAction.command.LOWER     = 'LOWER';
+deskAction.command.RAISE     = 'RAISE';
 
 deskAction.type = {};
-deskAction.type.NUMERIC  = 'QUANTITATIVE';
-deskAction.type.DISCRETE = 'QUALITATIVE';
+deskAction.type.NUMERIC      = 'QUANTITATIVE';
+deskAction.type.DISCRETE     = 'QUALITATIVE';
 
 module.exports = deskAction;

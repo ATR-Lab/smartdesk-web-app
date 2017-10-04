@@ -159,29 +159,9 @@ port.on('data', function(data) {
                         raiseDesk();
                         raiseDesk();
                         raiseDesk();
-                        /*
-                        raiseFun = setInterval(function() {
-                            port.write(desktrigger.up, function(err, results) {
-                                if (err) {
-                                    return console.log('Error on write: ', err.message);
-                                }
-                                console.log('RAISING DESK');
-                            });
-                        }, 1000);
-                        */
                         break;
                     case deskaction.command.LOWER:
                         console.log('LOWER');
-                        /*
-                        lowerFun = setInterval(function() {
-                            port.write(desktrigger.down, function(err, results) {
-                                if (err) {
-                                    return console.log('Error on write: ', err.message);
-                                }
-                                console.log('DECREASING DESK');
-                            });
-                        }, 1000);
-                        */
                         lowerDesk();
                         lowerDesk();
                         //lowerDesk();
