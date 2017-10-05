@@ -5,6 +5,7 @@ const desktrigger = require('./desk/trigger');
 const firebase    = require('firebase');
 const SerialPort  = require('serialport');
 // const rpio        = require('rpio');
+const colors      = require('colors');
 
 /* Get terminal arguments
  * --env    :   'dev', 'prod'
@@ -36,27 +37,27 @@ var pirBuffer = Buffer.alloc(10);
 
 /* RXTX Serial Communication Configuration */
 const ByteLength = SerialPort.parsers.ByteLength;
-const port = new SerialPort('/dev/ttyS0', { baudRate: 57600 });
-const parser = port.pipe(new ByteLength({length: 8}));
-// SerialPort event handlers
+const port       = new SerialPort('/dev/ttyS0', { baudRate: 57600 });
+const parser     = port.pipe(new ByteLength({length: 8}));
 port.open(function(err) {
     if(err) {
-        return console.log('Error opening port: ', err.message);
+        return console.log('PORT: Error when opening: '.red, err.message);
     } else {
-        console.log('Serial port opened');
+        console.log('PORT: Has been openend'.magenta);
         port.flush(null);
     }
 });
-port.on('open', function() { console.log('JUST OPENED PORT');  });
+port.on('open', function() { console.log('PORT: "Open" Event'.bold.white);  });
+
 port.on('error', function(err) {
-    console.log('LOG Error: ', err.message);
+    console.log('PORT: ERROR: '.red, err.message);
 });
 
 port.on('close', function(err) {
     if(err) {
-        console.log('LOG Error Closed Port: ', err.message);
+        console.log('PORT: ERROR Closed Port: '.red, err.message);
     }
-    console.log('Port Closed....');
+    console.log('PORT: "Close" Event'.bold.white);
 });
 
 var deskHeight    = [];
@@ -82,27 +83,27 @@ var desk = {
 const raiseDesk = () => {
     port.write(desktrigger.up, function(err, results) {
         if (err) {
-            return console.log('Error on write: ', err.message);
+            return console.log('PORT: ERROR: On write: ', err.message);
         }
-        console.log('RAISING DESK');
+        console.log('LOG: Action: Raising Desk...'.cyan);
     });
 };
 
 const lowerDesk = () => {
     port.write(desktrigger.down, function(err, results) {
         if (err) {
-            return console.log('Error on write: ', err.message);
+            return console.log('PORT: ERROR: On write: ', err.message);
         }
-        console.log('DECREASING DESK');
+        console.log('LOG: Action: Lowering Desk...'.cyan);
     });
 };
 
 const idleDesk = () => {
     port.write(desktrigger.idle, function(err, results) {
         if (err) {
-            return console.log('Error on write: ', err.message);
+            return console.log('PORT: ERROR: On write: ', err.message);
         }
-        console.log('IDLE HEARTBEAT');
+        console.log('LOG: Action: Idle Heatbeat...'.cyan);
     });
 }
 
@@ -146,13 +147,18 @@ port.on('data', function(data) {
                     if ( (desk.action.command == deskaction.command.RAISE && (desk.action.value - desk.currentHeight) <= 0 )
                         || (desk.action.command == deskaction.command.LOWER && (desk.action.value - desk.currentHeight) >= 0 )) {
                         desk.state = 'OFF';
-                        deskRef.update({state: 'OFF'});
+                        deskRef.update({ state: 'OFF' });
 
                         desk.action.status = deskaction.status.COMPLETED;
-                        deskRef.child('action').update({status: deskaction.status.COMPLETED});
+                        deskRef.child('action').update({ status: deskaction.status.COMPLETED });
 
                         port.flush(null);
-                        console.log('ACTION COMPLETED');
+                        port.close(function(err) {
+                            if(err) {
+                                console.log('PORT: ERROR: When closing port after action: '.red, err.message)
+                            }
+                        });
+                        console.log('LOG: Action: Completed'.bold.green);
                     }
                 }
             }
@@ -164,7 +170,7 @@ port.on('data', function(data) {
         idleDesk();
         port.flush(function(err) {
             if(err) {
-                console.log('LOG Error Flush: ', err.message)
+                console.log('PORT: ERROR: When flushing: '.red, err.message)
             }
         });
         deskRef.update({heartbit: currTime});
@@ -178,21 +184,19 @@ port.on('data', function(data) {
             desk.state = 'ON';
             deskRef.update({state: 'ON'});
         }
-
-        console.log(`22222ACTION STATUS: ${desk.action.status}`);
-        console.log(`COMMAND: ${desk.action.command} VALUE: ${desk.action.value} CURRHEIGHT: ${desk.currentHeight}`)
+        console.log(`LOG: Status: ${desk.action.status}; `
+            +`Command: ${desk.action.command}; `
+            +`Value: ${desk.action.value}; CurrHeight: ${desk.currentHeight}`)
         switch(desk.action.type) {
             case deskaction.type.NUMERIC:
                 //console.log('EXECUTING NUMERIC');
                 switch(desk.action.command) {
                     case deskaction.command.RAISE:
-                        console.log('RAISE');
                         raiseDesk();
                         raiseDesk();
                         raiseDesk();
                         break;
                     case deskaction.command.LOWER:
-                        console.log('LOWER');
                         lowerDesk();
                         lowerDesk();
                         //lowerDesk();
@@ -225,6 +229,7 @@ const officeRef         = database.ref('office');
 /* Listen for changes that take place when USER TALKS TO VOICE INTERFACE */
 deskRef.child('action').on('value', function(snapshot) {
     if(snapshot.val()['status'] === deskaction.status.EXECUTE) { // We receive a command from voice interface
+        port.open();
         desk.action.command = snapshot.val()['command'];  // LOWER, RAISE
         desk.action.type    = snapshot.val()['type'];     // QUANTITATIVE, QUALITATVE
         desk.action.value   = snapshot.val()['value'];    // A quantitative or qualitative value
