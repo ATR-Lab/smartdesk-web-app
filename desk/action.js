@@ -8,6 +8,7 @@ deskAction.status.COMPLETED  = 'COMPLETED';
 deskAction.command = {};
 deskAction.command.LOWER     = 'LOWER';
 deskAction.command.RAISE     = 'RAISE';
+deskAction.command.IDLE      = 'IDLE';
 
 deskAction.type = {};
 deskAction.type.NUMERIC      = 'QUANTITATIVE';
