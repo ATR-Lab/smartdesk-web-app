@@ -47,7 +47,8 @@ port.open(function(err) {
         port.flush(null);
     }
 });
-port.on('open', function() { console.log('PORT: "Open" Event'.bold.white);  });
+
+port.on('open', function() { console.log('PORT: "Open" Event'.bold.white); });
 
 port.on('error', function(err) {
     console.log('PORT: ERROR: '.red, err.message);
@@ -80,32 +81,14 @@ var desk = {
     state: 'OFF'
 };
 
-const raiseDesk = () => {
-    port.write(desktrigger.up, function(err, results) {
-        if (err) {
-            return console.log('PORT: ERROR: On write: ', err.message);
+const executeAction = (command) => {
+    port.write(desktrigger[command], function(err, results) {
+        if(err) {
+            return console.log('PORT: ERROR: On Write: ', err.message);
         }
-        console.log('LOG: Action: Raising Desk...'.cyan);
+        console.log('LOG: Action Command: '.cyan + command.white + ' Desk'.white);
     });
 };
-
-const lowerDesk = () => {
-    port.write(desktrigger.down, function(err, results) {
-        if (err) {
-            return console.log('PORT: ERROR: On write: ', err.message);
-        }
-        console.log('LOG: Action: Lowering Desk...'.cyan);
-    });
-};
-
-const idleDesk = () => {
-    port.write(desktrigger.idle, function(err, results) {
-        if (err) {
-            return console.log('PORT: ERROR: On write: ', err.message);
-        }
-        console.log('LOG: Action: Idle Heatbeat...'.cyan);
-    });
-}
 
 var raiseFun;
 var lowerFun;
@@ -167,7 +150,8 @@ port.on('data', function(data) {
 
     currTime = new Date();
     if(currTime > waitUntil) {
-        idleDesk();
+        //idleDesk();
+        executeAction(deskaction.command.IDLE);
         port.flush(function(err) {
             if(err) {
                 console.log('PORT: ERROR: When flushing: '.red, err.message)
@@ -192,14 +176,13 @@ port.on('data', function(data) {
                 //console.log('EXECUTING NUMERIC');
                 switch(desk.action.command) {
                     case deskaction.command.RAISE:
-                        raiseDesk();
-                        raiseDesk();
-                        raiseDesk();
+                        executeAction(deskaction.command.RAISE);
+                        executeAction(deskaction.command.RAISE);
+                        executeAction(deskaction.command.RAISE);
                         break;
                     case deskaction.command.LOWER:
-                        lowerDesk();
-                        lowerDesk();
-                        //lowerDesk();
+                        executeAction(deskaction.command.LOWER);
+                        executeAction(deskaction.command.LOWER);
                         break;
                     default:
                         console.log('EXECUTING DEFAULT INNER');
