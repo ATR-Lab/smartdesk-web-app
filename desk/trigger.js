@@ -1,9 +1,9 @@
 /* SmartDesk Communication Protocol */
 var desktrigger = {};
 
-desktrigger.idle    = Buffer.from([216, 216, 102, 0, 0]);
-desktrigger.down    = Buffer.from([216, 216, 102, 1, 1]);
-desktrigger.up      = Buffer.from([216, 216, 102, 2, 2]);
+desktrigger.IDLE    = Buffer.from([216, 216, 102, 0, 0]);
+desktrigger.LOWER   = Buffer.from([216, 216, 102, 1, 1]);
+desktrigger.RAISE   = Buffer.from([216, 216, 102, 2, 2]);
 desktrigger.one     = Buffer.from([216, 216, 102, 4, 4]);
 desktrigger.two     = Buffer.from([216, 216, 102, 8, 8]);
 desktrigger.three   = Buffer.from([216, 216, 102, 16, 16]);
