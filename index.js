@@ -166,7 +166,6 @@ port.on('data', function(data) {
             desk.state = 'ON';
             deskRef.update({state: 'ON'});
         }
-
         console.log(`LOG: Status: ${desk.action.status}; `
             +`Command: ${desk.action.command}; `
             +`Value: ${desk.action.value}; CurrHeight: ${desk.currentHeight}`)
@@ -214,12 +213,30 @@ deskRef.child('action').on('value', function(snapshot) {
         desk.action.type = snapshot.val()['type'];  // LOWER, RAISE
         console.log('FIREBASE: ', snapshot.val());
         if(desk.action.type == deskaction.type.NUMERIC) {
-            desk.action.command = snapshot.val()['command'];     // QUANTITATIVE
+            desk.action.command = snapshot.val()['command'];
             desk.action.value   = snapshot.val()['value'];    // A quantitative value
             desk.action.status  = deskaction.status.EXECUTING;
-        } else {
-            desk.action.type    = snapshot.val()['type'];     // QUALITATVE
-            desk.action.value   = desk.action.value + 5;      // Just increase height a bit
+        } else { // QUALITATIVE
+            desk.action.command = snapshot.val()['command'];
+            desk.action.value   = snapshot.val()['value'];
+            var deltaHeight = 0;
+            switch(desk.action.value) {
+                case deskaction.command.value.SMALL:
+                    deltaHeight = 5;
+                    break
+                case deskaction.command.value.LARGE:
+                    deltaHeight = 15;
+                    break;
+                case deskaction.command.value.TOP:
+                    break;
+                case deskaction.command.value.MIDDLE:
+                    break;
+                case deskaction.command.value.BOTTOM:
+                    break;
+                default:
+                    break;
+            }
+            desk.action.value   = desk.action.value + deltaHeight;
             desk.action.status  = deskaction.status.EXECUTING;
         }
         console.log(`desk->action->status: ${desk.action.status} ${desk.action.command} `
