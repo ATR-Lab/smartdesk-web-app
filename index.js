@@ -161,19 +161,17 @@ port.on('data', function(data) {
         waitUntil = new Date(new Date().getTime() + wait);
     }
 
-    //console.log(`${desk.action.status}, ${desk.action.command}, ${desk.action.value}, ${desk.currentHeight}`)
-    //console.log(`11111ACTION STATUS: ${desk.action.status}`);
     if(desk.action.status === deskaction.status.EXECUTING) {
         if(desk.state == 'OFF') {
             desk.state = 'ON';
             deskRef.update({state: 'ON'});
         }
+
         console.log(`LOG: Status: ${desk.action.status}; `
             +`Command: ${desk.action.command}; `
             +`Value: ${desk.action.value}; CurrHeight: ${desk.currentHeight}`)
         switch(desk.action.type) {
             case deskaction.type.NUMERIC:
-                //console.log('EXECUTING NUMERIC');
                 switch(desk.action.command) {
                     case deskaction.command.RAISE:
                         executeAction(deskaction.command.RAISE);
@@ -213,11 +211,19 @@ const officeRef         = database.ref('office');
 deskRef.child('action').on('value', function(snapshot) {
     if(snapshot.val()['status'] === deskaction.status.EXECUTE) { // We receive a command from voice interface
         port.open();
-        desk.action.command = snapshot.val()['command'];  // LOWER, RAISE
-        desk.action.type    = snapshot.val()['type'];     // QUANTITATIVE, QUALITATVE
-        desk.action.value   = snapshot.val()['value'];    // A quantitative or qualitative value
-        desk.action.status  = deskaction.status.EXECUTING;
-        console.log(`desk->action->status: ${desk.action.status} ${desk.action.command} of type: ${desk.action.type} ${desk.action.value}`);
+        desk.action.type = snapshot.val()['type'];  // LOWER, RAISE
+        console.log('FIREBASE: ', snapshot.val());
+        if(desk.action.type == deskaction.type.NUMERIC) {
+            desk.action.command = snapshot.val()['command'];     // QUANTITATIVE
+            desk.action.value   = snapshot.val()['value'];    // A quantitative value
+            desk.action.status  = deskaction.status.EXECUTING;
+        } else {
+            desk.action.type    = snapshot.val()['type'];     // QUALITATVE
+            desk.action.value   = desk.action.value + 5;      // Just increase height a bit
+            desk.action.status  = deskaction.status.EXECUTING;
+        }
+        console.log(`desk->action->status: ${desk.action.status} ${desk.action.command} `
+            + `of type: ${desk.action.type} ${desk.action.value}`);
     } else if(snapshot.val()['status'] === deskaction.status.COMPLETED) {
         // console.log('desk->action->status: DONE')
     } else { // else 'DONE'
