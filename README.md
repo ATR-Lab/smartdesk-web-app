@@ -1,4 +1,4 @@
-# SmartDesk Web Application [DRAFT]
+# SmartDesk Web Application
 > SmartDesk - A smarter more intuitive desk
 
 This repository hold a NodeJS web application that is hosted on a RaspberyPI. It interacts with the desk via GPIO communication.
