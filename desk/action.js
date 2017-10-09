@@ -18,7 +18,8 @@ deskAction.command.value.MIDDLE = 'MIDDLE';
 deskAction.command.value.BOTTOM = 'BOTTOM';
 
 deskAction.type = {};
-deskAction.type.NUMERIC      = 'QUANTITATIVE';
-deskAction.type.DISCRETE     = 'QUALITATIVE';
+deskAction.type.QUANTITATIVE    = 'QUANTITATIVE';
+deskAction.type.QUALITATIVE     = 'QUALITATIVE';
+deskAction.type.ORDINAL         = 'ORDINAL';
 
 module.exports = deskAction;
