@@ -115,10 +115,7 @@ port.on('data', function(data) {
                 deskHeight[1] = hexBuf[12]
                 pointer = 0;
 
-                //heartbit = heartbit^1;    // flip bit
-                //deskRef.update({heartbit: heartbit, currentHeight: deskHeight[0]});
-                //desk.currentHeight = deskHeight[0];
-                if(deskHeight[0] != 0 && deskHeight[0] != previousHeight) {
+                if(deskHeight[0] == deskHeight[1] && deskHeight[0] != 0 && deskHeight[0] != previousHeight) {
                     desk.currentHeight = deskHeight[0];
                     deskRef.update({currentHeight: deskHeight[0]});
                     previousHeight = deskHeight[0]
@@ -273,8 +270,6 @@ deskRef.child('action').on('value', function(snapshot) {
         console.log(`desk->action->status: ${desk.action.status} ${desk.action.command} `
             + `of type: ${desk.action.type} ${desk.action.value}`);
     } else if(snapshot.val()['status'] === deskaction.status.COMPLETED) {
-        // console.log('desk->action->status: DONE')
-    } else { // else 'DONE'
-        //
+    } else {
     }
 });
