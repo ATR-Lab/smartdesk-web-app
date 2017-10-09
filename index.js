@@ -186,10 +186,23 @@ port.on('data', function(data) {
                         break;
                 }
                 break;
-            case deskaction.type.QUALITATIVE:
+            case deskaction.type.DISCRETE:
+                switch(desk.action.command) {
+                    case deskaction.command.RAISE:
+                        executeAction(deskaction.command.RAISE);
+                        executeAction(deskaction.command.RAISE);
+                        break;
+                    case deskaction.command.LOWER:
+                        executeAction(deskaction.command.LOWER);
+                        executeAction(deskaction.command.LOWER);
+                        break;
+                    default:
+                        console.log('EXECUTING DEFAULT INNER');
+                        break;
+                }
                 break;
             default:
-                console.log('EXECUTING DEFAULT');
+                console.log(`EXECUTING DEFAULT: ${desk.action.type} ::: ${deskaction.type.QUALITATIVE}`);
                 //break;
         }
     } else {  // We are done, no need to raise or lower the desk
@@ -222,10 +235,10 @@ deskRef.child('action').on('value', function(snapshot) {
             var deltaHeight = 0;
             switch(desk.action.value) {
                 case deskaction.command.value.SMALL:
-                    deltaHeight = 5;
+                    deltaHeight = 4;
                     break
                 case deskaction.command.value.LARGE:
-                    deltaHeight = 15;
+                    deltaHeight = 8;
                     break;
                 case deskaction.command.value.TOP:
                     break;
@@ -236,7 +249,8 @@ deskRef.child('action').on('value', function(snapshot) {
                 default:
                     break;
             }
-            desk.action.value   = desk.action.value + deltaHeight;
+            deltaHeight = (desk.action.command == deskaction.command.LOWER) ? (deltaHeight * -1) : deltaHeight;
+            desk.action.value   = desk.currentHeight + deltaHeight;
             desk.action.status  = deskaction.status.EXECUTING;
         }
         console.log(`desk->action->status: ${desk.action.status} ${desk.action.command} `
