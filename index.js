@@ -170,7 +170,7 @@ port.on('data', function(data) {
             +`Command: ${desk.action.command}; `
             +`Value: ${desk.action.value}; CurrHeight: ${desk.currentHeight}`)
         switch(desk.action.type) {
-            case deskaction.type.NUMERIC:
+            case deskaction.type.QUANTITATIVE:
                 switch(desk.action.command) {
                     case deskaction.command.RAISE:
                         executeAction(deskaction.command.RAISE);
@@ -186,7 +186,7 @@ port.on('data', function(data) {
                         break;
                 }
                 break;
-            case deskaction.type.DISCRETE:
+            case deskaction.type.QUALITATIVE:
                 switch(desk.action.command) {
                     case deskaction.command.RAISE:
                         executeAction(deskaction.command.RAISE);
@@ -203,7 +203,7 @@ port.on('data', function(data) {
                 break;
             default:
                 console.log(`EXECUTING DEFAULT: ${desk.action.type} ::: ${deskaction.type.QUALITATIVE}`);
-                //break;
+                break;
         }
     } else {  // We are done, no need to raise or lower the desk
         //desk.action.status = deskaction.status.COMPLETED;
@@ -225,11 +225,11 @@ deskRef.child('action').on('value', function(snapshot) {
         port.open();
         desk.action.type = snapshot.val()['type'];  // LOWER, RAISE
         console.log('FIREBASE: ', snapshot.val());
-        if(desk.action.type == deskaction.type.NUMERIC) {
+        if(desk.action.type == deskaction.type.QUANTITATIVE) {
             desk.action.command = snapshot.val()['command'];
             desk.action.value   = snapshot.val()['value'];    // A quantitative value
             desk.action.status  = deskaction.status.EXECUTING;
-        } else { // QUALITATIVE
+        } else if(desk.action.type == deskaction.type.QUALITATIVE) { // QUALITATIVE
             desk.action.command = snapshot.val()['command'];
             desk.action.value   = snapshot.val()['value'];
             var deltaHeight = 0;
@@ -240,18 +240,35 @@ deskRef.child('action').on('value', function(snapshot) {
                 case deskaction.command.value.LARGE:
                     deltaHeight = 8;
                     break;
-                case deskaction.command.value.TOP:
-                    break;
-                case deskaction.command.value.MIDDLE:
-                    break;
-                case deskaction.command.value.BOTTOM:
-                    break;
                 default:
+                    console.log('DEFAULT on desk.action.value'.red);
                     break;
             }
             deltaHeight = (desk.action.command == deskaction.command.LOWER) ? (deltaHeight * -1) : deltaHeight;
             desk.action.value   = desk.currentHeight + deltaHeight;
             desk.action.status  = deskaction.status.EXECUTING;
+        } else { //ORDINAL
+            desk.action.command = snapshot.val()['command'];
+            desk.action.value   = snapshot.val()['value'];    //An ordinal value: TOP, MIDDLE, BOTTOM
+            desk.action.status  = deskaction.status.EXECUTING;
+            switch(desk.action.value) {
+                case deskaction.command.value.TOP:        //ordinal value
+                    desk.action.value = 120;
+                    desk.action.command = (desk.currentHeight <= desk.action.value) ? 'RAISE':'LOWER';
+                    break;
+                case deskaction.command.value.MIDDLE:    //ordinal value
+                    desk.action.value = 90;
+                    desk.action.command = (desk.currentHeight <= desk.action.value) ? 'RAISE':'LOWER';
+                    break;
+                case deskaction.command.value.BOTTOM:    //ordinal value
+                    desk.action.value = 74;
+                    desk.action.command = (desk.currentHeight >= desk.action.value) ? 'LOWER':'RAISE';
+                    break;
+                default:
+                    console.log('>>>>>');
+                    break;
+            }
+            desk.action.type = deskaction.type.QUANTITATIVE; // Turn ordinal into qualitative
         }
         console.log(`desk->action->status: ${desk.action.status} ${desk.action.command} `
             + `of type: ${desk.action.type} ${desk.action.value}`);
