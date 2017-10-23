@@ -33,24 +33,11 @@ var pirBuffer = Buffer.alloc(10);
 
 rpio.open(pirPin, rpio.INPUT);   // Read-Only Input
 rpio.poll(pirPin, function() {
-    console.log('TEST:::');
+    console.log('TEST:::PIR POLLING');
 });
 
 const deskLampPin = 18
 rpio.open(deskLampPin, rpio.OUTPUT, rpio.LOW);
-/*
-rpio.write(deskLampPin, rpio.LOW);
-console.log('RPIO HIGH')
-for(var i = 0; i < 20; i++) {
-    console.log('RPIO ~~')
-    rpio.write(deskLampPin, rpio.HIGH);
-    rpio.sleep(2);
-
-    rpio.write(deskLampPin, rpio.LOW);
-    rpio.msleep(500)
-    console.log('RPIO')
-}
-*/
 
 /* RXTX Serial Communication Configuration */
 const ByteLength = SerialPort.parsers.ByteLength;
