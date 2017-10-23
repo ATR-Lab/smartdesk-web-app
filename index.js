@@ -4,7 +4,7 @@ const deskaction  = require('./desk/action');
 const desktrigger = require('./desk/trigger');
 const firebase    = require('firebase');
 const SerialPort  = require('serialport');
-// const rpio        = require('rpio');
+const rpio        = require('rpio');
 const colors      = require('colors');
 
 /* Get terminal arguments
@@ -30,10 +30,27 @@ const env = grab('--env');    // Environment: 'dev' 'prod'
  */
 const pirPin = 12;
 var pirBuffer = Buffer.alloc(10);
-//rpio.open(pirPin, rpio.INPUT);   // Read-Only Input
-//rpio.poll(pirPin, function() {
-//    console.log('TEST:::');
-//});
+
+rpio.open(pirPin, rpio.INPUT);   // Read-Only Input
+rpio.poll(pirPin, function() {
+    console.log('TEST:::');
+});
+
+const deskLampPin = 18
+rpio.open(deskLampPin, rpio.OUTPUT, rpio.LOW);
+/*
+rpio.write(deskLampPin, rpio.LOW);
+console.log('RPIO HIGH')
+for(var i = 0; i < 20; i++) {
+    console.log('RPIO ~~')
+    rpio.write(deskLampPin, rpio.HIGH);
+    rpio.sleep(2);
+
+    rpio.write(deskLampPin, rpio.LOW);
+    rpio.msleep(500)
+    console.log('RPIO')
+}
+*/
 
 /* RXTX Serial Communication Configuration */
 const ByteLength = SerialPort.parsers.ByteLength;
@@ -179,7 +196,7 @@ port.on('data', function(data) {
                         executeAction(deskaction.command.LOWER);
                         break;
                     default:
-                        console.log('EXECUTING DEFAULT INNER');
+                        console.log('EXECUTING DEFAULT INNER QUANTITATIVE');
                         break;
                 }
                 break;
@@ -194,7 +211,7 @@ port.on('data', function(data) {
                         executeAction(deskaction.command.LOWER);
                         break;
                     default:
-                        console.log('EXECUTING DEFAULT INNER');
+                        console.log('EXECUTING DEFAULT INNER QUALITATIVE');
                         break;
                 }
                 break;
@@ -227,9 +244,10 @@ deskRef.child('action').on('value', function(snapshot) {
             desk.action.value   = snapshot.val()['value'];    // A quantitative value
             desk.action.status  = deskaction.status.EXECUTING;
         } else if(desk.action.type == deskaction.type.QUALITATIVE) { // QUALITATIVE
+            console.log('QUALITATIVE')
             desk.action.command = snapshot.val()['command'];
             desk.action.value   = snapshot.val()['value'];
-            var deltaHeight = 0;
+
             switch(desk.action.value) {
                 case deskaction.command.value.SMALL:
                     deltaHeight = 4;
@@ -245,6 +263,7 @@ deskRef.child('action').on('value', function(snapshot) {
             desk.action.value   = desk.currentHeight + deltaHeight;
             desk.action.status  = deskaction.status.EXECUTING;
         } else { //ORDINAL
+            console.log('ORDINAL::::')
             desk.action.command = snapshot.val()['command'];
             desk.action.value   = snapshot.val()['value'];    //An ordinal value: TOP, MIDDLE, BOTTOM
             desk.action.status  = deskaction.status.EXECUTING;
@@ -258,7 +277,7 @@ deskRef.child('action').on('value', function(snapshot) {
                     desk.action.command = (desk.currentHeight <= desk.action.value) ? 'RAISE':'LOWER';
                     break;
                 case deskaction.command.value.BOTTOM:    //ordinal value
-                    desk.action.value = 74;
+                    desk.action.value = 75;
                     desk.action.command = (desk.currentHeight >= desk.action.value) ? 'LOWER':'RAISE';
                     break;
                 default:
@@ -271,5 +290,16 @@ deskRef.child('action').on('value', function(snapshot) {
             + `of type: ${desk.action.type} ${desk.action.value}`);
     } else if(snapshot.val()['status'] === deskaction.status.COMPLETED) {
     } else {
+    }
+});
+
+
+
+firebase.database().ref('deskLamp').child('action').on('value', function(snapshot) {
+    if(snapshot.val()['status'] === deskaction.status.EXECUTE) {
+        var command = snapshot.val()['command']
+        console.log('LOG: Action Command: '.yellow + command.white + ' Desk Lamp'.white);
+        var rpioVal = (command === 'ON') ? rpio.HIGH : rpio.LOW //TODO: include 'value'' provided in firebase snapshot
+        rpio.write(deskLampPin, rpioVal)
     }
 });
